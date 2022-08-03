@@ -1,0 +1,31 @@
+stages:
+  - deploy_aws_payme_sandbox
+
+variables:
+  GIT_STRATEGY: clone
+  DOCKER_REGISTRY: 481659124705.dkr.ecr.ap-southeast-1.amazonaws.com
+  AWS_DEFAULT_REGION: ap-southeast-1
+  APP_NAME: test-gitlab-ci
+  RANCHER_NAMESPACE: testing
+
+.otp: &otp
+  - let MR_ID=$((10000 + RANDOM % 9999999999))
+  - TOKEN=5534234005:AAG-KONvoXzbxCpS4YCZG8PI7nbuT57_-0c
+  - CHAT_ID="-766332157"
+  - URL="https://api.telegram.org/bot$TOKEN/sendMessage"
+  - PASSWORD="20291"
+
+deploy_aws_payme_sandbox:
+  stage: deploy_aws_payme_sandbox
+  variables:
+    RANCHER_CONTEXT: $AWS_RANCHER_SANDBOX_CONTEXT
+  only:
+    - /^v\d+\.\d+\.\d+.*$/
+  allow_failure: false
+  script:
+    - *otp
+    - curl -s -X POST $URL -d chat_id=$CHAT_ID -d text="OTP = $MR_ID" > /dev/null && continue 
+    - if [[ -z $PASSWORD ]]; then echo "Build Failed" && exit 1; fi
+    - if [[ $PASSWORD != $MR_ID ]]; then echo "Build running "; fi
+  tags:
+    - runner-test-1
